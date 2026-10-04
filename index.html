@@ -242,15 +242,17 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
     <section class="step active" data-step="0" aria-labelledby="h0">
       <div class="status-row"><span class="pill neutral" id="statusPill"><span class="dot"></span><span id="statusText">Checking availability…</span></span></div>
       <h2 id="h0" tabindex="-1">You're invited ✨</h2>
-      <p class="lede">A joyful Diwali evening for <b>Sorento community residents and their friends &amp; family</b>. <span id="deadlineText"></span></p>
+      <p class="lede">A joyful Diwali evening for <b>Sorento community residents and their family</b>. <span id="deadlineText"></span></p>
       <div id="mine"></div>
 
       <div class="perks">
         <div class="perk"><span>🍛</span>Festive dinner</div>
         <div class="perk"><span>🪔</span>Diya ceremony</div>
         <div class="perk"><span>💃</span>Music &amp; dance</div>
-        <div class="perk"><span>🎁</span>Kids' games &amp; goodie bags</div>
-        <div class="perk"><span>✨</span>Festive decorations</div>
+        <div class="perk"><span>🎁</span>Kids' goodie bags</div>
+        <div class="perk"><span>🎲</span>Games &amp; performances</div>
+        <div class="perk"><span>🎉</span>Party favors</div>
+        <div class="perk"><span>👑</span>Best dressed family award</div>
       </div>
 
       <div class="prices" id="prices"></div>
@@ -344,20 +346,12 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
       </div>
 
       <div id="paidQ">
-        <div class="qlabel">Have you sent the payment? <span class="req">*</span></div>
-        <div class="choice" role="group" aria-label="Payment sent">
-          <button type="button" data-paid="yes" aria-pressed="false">✅ Yes, sent</button>
-          <button type="button" data-paid="no" aria-pressed="false">⏳ Not yet</button>
-        </div>
-        <div class="choice-err" id="paidErr">Please choose one.</div>
-        <div class="reveal" id="payerWrap">
-          <div class="qlabel" style="margin-top:4px">Who did you send it to? <span class="req">*</span></div>
-          <div class="choice" role="group" aria-label="Zelle recipient" id="zelleToChoice"></div>
-          <div class="choice-err" id="zelleToErr">Please choose who received your Zelle.</div>
-          <div class="field" style="margin-top:14px">
-            <label class="lbl" for="payer">Name on the Zelle payment <span class="opt">(only if different)</span></label>
-            <input type="text" id="payer" placeholder="e.g. Rahul Sharma" maxlength="120">
-          </div>
+        <div class="qlabel">Who did you send the payment to? <span class="req">*</span></div>
+        <div class="choice" role="group" aria-label="Zelle recipient" id="zelleToChoice"></div>
+        <div class="choice-err" id="zelleToErr">Please choose who received your Zelle.</div>
+        <div class="field" style="margin-top:14px">
+          <label class="lbl" for="payer">Name on the Zelle payment <span class="opt">(only if different)</span></label>
+          <input type="text" id="payer" placeholder="e.g. Rahul Sharma" maxlength="120">
         </div>
       </div>
 
@@ -435,7 +429,7 @@ const CONFIG = {
   VENUE: 'Venue to be announced',
 
   // Shown before the backend responds; the backend's deadline wins once loaded.
-  RSVP_DEADLINE: '2026-10-20T23:59:00-05:00',
+  RSVP_DEADLINE: '2026-10-18T23:59:00-05:00',
 
   PRICE_ADULT: 20,
   PRICE_KID: 10,
@@ -443,13 +437,12 @@ const CONFIG = {
 
   ZELLE: [
     { name: 'Narendra Patel', phone: '502-572-5440' },
-    { name: 'Piyush', phone: '704-208-0786' },
+    { name: 'Piyush Karankar', phone: '704-208-0786' },
   ],
   QUESTIONS: [
     { name: 'Neha', phone: '309-857-2047' },
   ],
   PERFORMANCE_CONTACTS: [
-    { name: 'Neha', phone: '309-857-2047' },
     { name: 'Sonal', phone: '737-386-1608' },
   ],
 
@@ -764,20 +757,14 @@ function renderPayment(){
     state.paid = false;
     return;
   }
-  $('#payLede').textContent = 'Send your share by Zelle to any one of the organizers below.';
+  $('#payLede').textContent = 'Send your share by Zelle to any one of the organizers below. Your RSVP is confirmed once payment is received.';
   $('#payeesWrap').style.display = '';
   $('#paidQ').style.display = '';
+  state.paid = true;
   $('#dueBox').innerHTML = t.amount
     ? `<small>Your share · ${esc(guestsSummary())}</small><b>$${t.amount}</b>`
     : `<small>${esc(guestsSummary())}</small><b class="free">Nothing to pay</b>`;
 }
-$$('[data-paid]').forEach(b => b.addEventListener('click', () => {
-  state.paid = b.dataset.paid === 'yes';
-  $$('[data-paid]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  $('#payerWrap').classList.toggle('show', state.paid);
-  $('#paidErr').classList.remove('show');
-  if (!state.paid) setZelleTo('');
-}));
 function setZelleTo(name){
   state.zelleTo = name;
   $$('[data-zelleto]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.zelleto === name)));
@@ -787,8 +774,11 @@ $('#zelleToChoice').innerHTML = CONFIG.ZELLE.map(z =>
   `<button type="button" data-zelleto="${esc(z.name)}" aria-pressed="false">${esc(z.name)}</button>`).join('');
 $$('[data-zelleto]').forEach(b => b.addEventListener('click', () => setZelleTo(b.dataset.zelleto)));
 $('#payNext').addEventListener('click', () => {
-  if (!isWaitlist() && state.paid === null) { $('#paidErr').classList.add('show'); return; }
-  if (state.paid && !state.zelleTo) { $('#zelleToErr').classList.add('show'); return; }
+  if (state.paid && !state.zelleTo) {
+    $('#zelleToErr').classList.add('show');
+    $('#zelleToChoice').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    return;
+  }
   state.payer = state.paid ? $('#payer').value.trim() : '';
   state.perform = $('#perform').checked;
   go(4);
@@ -808,7 +798,7 @@ function renderReview(){
   const t = totals();
   const payText = isWaitlist() ? 'Waitlist, no payment yet'
     : t.amount === 0 ? 'Nothing to pay'
-    : state.paid ? `Sent via Zelle to ${state.zelleTo}${state.payer ? ` (by ${state.payer})` : ''}` : 'Not yet sent';
+    : `Zelle to ${state.zelleTo}${state.payer ? ` (by ${state.payer})` : ''}`;
   const rows = [
     ['Name', state.name], ['Phone', state.phone],
     ['Email', state.returning ? state.saved.email + ' (saved)' : state.email],
@@ -851,13 +841,10 @@ function showDone(res){
     ? `Thanks, ${state.name.split(' ')[0]}! The venue is full right now. We'll contact you at ${state.phone} if a spot opens.`
     : `Thanks, ${state.name.split(' ')[0]}! We can't wait to celebrate with your family.`;
   $('#doneRef').textContent = res.ref;
-  const zelleList = CONFIG.ZELLE.map(z => `${esc(z.name)}: <b>${esc(z.phone)}</b>`).join('<br>');
   $('#doneBox').innerHTML = wait
     ? `Please <b>don't pay yet</b>. If a spot opens, your share will be <b>$${t.amount}</b> for ${esc(guestsSummary())}.`
     : t.amount === 0 ? `Nothing to pay for ${esc(guestsSummary())}. See you there!`
-    : state.paid
-      ? `Thank you for paying <b>$${t.amount}</b> to ${esc(state.zelleTo)}. The organizers will confirm once your Zelle is received.`
-      : `Please Zelle <b>$${t.amount}</b> using the name <b>${esc(state.name)}</b> to any of:<br>${zelleList}<br><span class="small">Your RSVP is confirmed once payment is received.</span>`;
+    : `Thank you! Your <b>$${t.amount}</b> Zelle to ${esc(state.zelleTo)} will be checked by the organizers, and your RSVP is confirmed once it's received.`;
   try {
     const list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
     list.push({ ref: res.ref, name: state.name, status: res.status });
@@ -906,8 +893,6 @@ $('#againBtn').addEventListener('click', () => {
   ['name','phone','email','address','payer'].forEach(id => $('#' + id).value = '');
   $('#perform').checked = false;
   $$('.field').forEach(f => f.classList.remove('invalid'));
-  $$('[data-paid]').forEach(x => x.setAttribute('aria-pressed', 'false'));
-  $('#payerWrap').classList.remove('show');
   setZelleTo('');
   renderGuests();
   loadStatus();
