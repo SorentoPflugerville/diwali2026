@@ -90,6 +90,7 @@ h2{font-family:var(--display);font-weight:600;font-size:26px;line-height:1.15;ma
 .perks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
 .perk{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid var(--line-soft);font-size:14px;line-height:1.3}
 .perk span{font-size:22px}
+.perk:last-child:nth-child(odd){grid-column:1/-1;justify-content:center}
 .prices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px}
 .price{text-align:center;padding:12px 6px;border-radius:14px;background:linear-gradient(160deg,rgba(247,201,72,.14),rgba(255,107,53,.08));border:1px solid var(--line)}
 .price b{display:block;font-family:var(--display);font-size:24px;color:var(--gold)}
@@ -250,7 +251,6 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
         <div class="perk"><span>💃</span>Music &amp; dance</div>
         <div class="perk"><span>🎁</span>Kids' games &amp; goodie bags</div>
         <div class="perk"><span>✨</span>Festive decorations</div>
-        <div class="perk"><span>🏛️</span>Venue booked once RSVP closes</div>
       </div>
 
       <div class="prices" id="prices"></div>
@@ -512,9 +512,14 @@ function renderStatic(){
 
   const photos = $('#photos');
   photos.innerHTML = CONFIG.PHOTOS.map(p =>
-    `<figure><img src="${esc(p.src)}" alt="${esc(p.caption)}" loading="lazy"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('') +
+    `<figure><img src="${esc(p.src)}" alt="${esc(p.caption)}"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('') +
     `<figure><div class="you"><b>Diwali 2026</b><span class="small">with you &amp; your loved ones 🪔</span></div></figure>`;
-  $$('img', photos).forEach(img => img.addEventListener('error', () => img.closest('figure').remove()));
+  // Missing photos are dropped; if none load, hide the whole strip (no lonely placeholder card).
+  $$('img', photos).forEach(img => img.addEventListener('error', () => {
+    img.closest('figure').remove();
+    if (!photos.querySelector('img')) photos.remove();
+  }));
+  if (!CONFIG.PHOTOS.length) photos.remove();
 
   $('#payees').innerHTML = CONFIG.ZELLE.map((z, i) =>
     `<div class="payee"><div><b>${esc(z.name)}</b><span>${esc(z.phone)}</span></div>
