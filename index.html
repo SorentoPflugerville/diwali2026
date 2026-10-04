@@ -351,7 +351,10 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
         </div>
         <div class="choice-err" id="paidErr">Please choose one.</div>
         <div class="reveal" id="payerWrap">
-          <div class="field">
+          <div class="qlabel" style="margin-top:4px">Who did you send it to? <span class="req">*</span></div>
+          <div class="choice" role="group" aria-label="Zelle recipient" id="zelleToChoice"></div>
+          <div class="choice-err" id="zelleToErr">Please choose who received your Zelle.</div>
+          <div class="field" style="margin-top:14px">
             <label class="lbl" for="payer">Name on the Zelle payment <span class="opt">(only if different)</span></label>
             <input type="text" id="payer" placeholder="e.g. Rahul Sharma" maxlength="120">
           </div>
@@ -468,7 +471,7 @@ const DEMO = !CONFIG.SCRIPT_URL;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const STORE_KEY = 'sorento_diwali_2026_rsvps';
 
-const state = { name:'', phone:'', email:'', address:'', adults:1, kids:0, infants:0, paid:null, payer:'', perform:false, returning:false, saved:null };
+const state = { name:'', phone:'', email:'', address:'', adults:1, kids:0, infants:0, paid:null, payer:'', zelleTo:'', perform:false, returning:false, saved:null };
 let step = 0;
 let server = { mode: 'loading' };
 
@@ -768,9 +771,19 @@ $$('[data-paid]').forEach(b => b.addEventListener('click', () => {
   $$('[data-paid]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   $('#payerWrap').classList.toggle('show', state.paid);
   $('#paidErr').classList.remove('show');
+  if (!state.paid) setZelleTo('');
 }));
+function setZelleTo(name){
+  state.zelleTo = name;
+  $$('[data-zelleto]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.zelleto === name)));
+  if (name) $('#zelleToErr').classList.remove('show');
+}
+$('#zelleToChoice').innerHTML = CONFIG.ZELLE.map(z =>
+  `<button type="button" data-zelleto="${esc(z.name)}" aria-pressed="false">${esc(z.name)}</button>`).join('');
+$$('[data-zelleto]').forEach(b => b.addEventListener('click', () => setZelleTo(b.dataset.zelleto)));
 $('#payNext').addEventListener('click', () => {
   if (!isWaitlist() && state.paid === null) { $('#paidErr').classList.add('show'); return; }
+  if (state.paid && !state.zelleTo) { $('#zelleToErr').classList.add('show'); return; }
   state.payer = state.paid ? $('#payer').value.trim() : '';
   state.perform = $('#perform').checked;
   go(4);
@@ -790,7 +803,7 @@ function renderReview(){
   const t = totals();
   const payText = isWaitlist() ? 'Waitlist, no payment yet'
     : t.amount === 0 ? 'Nothing to pay'
-    : state.paid ? `Sent via Zelle${state.payer ? ` (by ${state.payer})` : ''}` : 'Not yet sent';
+    : state.paid ? `Sent via Zelle to ${state.zelleTo}${state.payer ? ` (by ${state.payer})` : ''}` : 'Not yet sent';
   const rows = [
     ['Name', state.name], ['Phone', state.phone],
     ['Email', state.returning ? state.saved.email + ' (saved)' : state.email],
@@ -838,7 +851,7 @@ function showDone(res){
     ? `Please <b>don't pay yet</b>. If a spot opens, your share will be <b>$${t.amount}</b> for ${esc(guestsSummary())}.`
     : t.amount === 0 ? `Nothing to pay for ${esc(guestsSummary())}. See you there!`
     : state.paid
-      ? `Thank you for paying <b>$${t.amount}</b>. The organizers will confirm once your Zelle is received.`
+      ? `Thank you for paying <b>$${t.amount}</b> to ${esc(state.zelleTo)}. The organizers will confirm once your Zelle is received.`
       : `Please Zelle <b>$${t.amount}</b> using the name <b>${esc(state.name)}</b> to any of:<br>${zelleList}<br><span class="small">Your RSVP is confirmed once payment is received.</span>`;
   try {
     const list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
@@ -890,6 +903,7 @@ $('#againBtn').addEventListener('click', () => {
   $$('.field').forEach(f => f.classList.remove('invalid'));
   $$('[data-paid]').forEach(x => x.setAttribute('aria-pressed', 'false'));
   $('#payerWrap').classList.remove('show');
+  setZelleTo('');
   renderGuests();
   loadStatus();
   go(0);
