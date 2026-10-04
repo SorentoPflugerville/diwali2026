@@ -117,6 +117,18 @@ input:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(24
 .field.invalid input,.field.invalid textarea{border-color:var(--err)}
 .field.invalid .err-msg{display:block}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.lookup{font-size:14px;margin-top:8px;color:var(--muted);min-height:0}
+.lookup:empty{display:none}
+.lookup.ok{color:#c6f6de}
+.welcome{margin:0 0 6px;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(98,227,166,.12),rgba(247,201,72,.1));border:1px solid rgba(98,227,166,.35);animation:rise .3s ease}
+.welcome[hidden]{display:none}
+.wb-title{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.2}
+.wb-list{margin:0 0 6px}
+.wb-list div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:15px}
+.wb-list div:last-child{border-bottom:0}
+.wb-list dt{color:var(--dim)}
+.wb-list dd{margin:0;text-align:right;word-break:break-word}
+.eyebrow{display:inline-block;margin:6px 0 2px;padding:4px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(247,201,72,.1);color:var(--gold);font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 
 /* guests */
 .guest{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line-soft)}
@@ -211,6 +223,7 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
   <header class="hero">
     <div class="diya" aria-hidden="true"><div class="glow"></div><div class="flame"></div><div class="bowl"></div></div>
     <div class="greeting" lang="hi">शुभ दीपावली</div>
+    <div class="eyebrow" id="edition">✦ 4th Sorento Diwali ✦</div>
     <h1 id="eventName">Sorento Diwali 2026</h1>
     <div class="meta">
       <span class="chip">🗓️ <span id="eventDate"></span></span>
@@ -251,16 +264,31 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
     <!-- 1 · Details -->
     <section class="step" data-step="1" aria-labelledby="h1s">
       <h2 id="h1s" tabindex="-1">Your details</h2>
-      <p class="lede">So we can share event updates with you.</p>
+      <p class="lede">Joined us before? Start with your phone number and we'll fill in the rest.</p>
       <form id="detailsForm" novalidate>
-        <div class="field" data-field="name">
-          <label class="lbl" for="name">Full name <span class="req">*</span></label>
-          <input type="text" id="name" autocomplete="name" placeholder="e.g. Priya Sharma" maxlength="120">
-          <div class="err-msg"></div>
-        </div>
         <div class="field" data-field="phone">
           <label class="lbl" for="phone">Phone <span class="req">*</span></label>
           <input type="tel" id="phone" autocomplete="tel" inputmode="tel" placeholder="(512) 555-0123">
+          <div class="err-msg"></div>
+          <div class="lookup" id="lookupStatus" aria-live="polite"></div>
+        </div>
+
+        <div class="welcome" id="welcomeCard" hidden>
+          <div class="wb-title">Welcome back, <span id="wbName"></span>! 👋</div>
+          <p class="small" style="margin:2px 0 12px">We have your details from last year.</p>
+          <dl class="wb-list">
+            <div><dt>Name</dt><dd id="wbFull"></dd></div>
+            <div><dt>Email</dt><dd id="wbEmail"></dd></div>
+            <div><dt>Address</dt><dd id="wbAddr"></dd></div>
+            <div><dt>Last time</dt><dd id="wbLast"></dd></div>
+          </dl>
+          <button class="edit" type="button" id="wbEdit">Something changed? Update my details</button>
+        </div>
+
+        <div id="newFields">
+        <div class="field" data-field="name">
+          <label class="lbl" for="name">Full name <span class="req">*</span></label>
+          <input type="text" id="name" autocomplete="name" placeholder="e.g. Priya Sharma" maxlength="120">
           <div class="err-msg"></div>
         </div>
         <div class="field" data-field="email">
@@ -273,10 +301,11 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
           <textarea id="address" autocomplete="street-address" placeholder="House number and street" maxlength="200" rows="2"></textarea>
           <div class="err-msg"></div>
         </div>
+        </div>
         <input type="text" id="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
         <div class="actions">
           <button class="btn btn-ghost" type="button" data-back>← Back</button>
-          <button class="btn btn-primary" type="submit">Continue →</button>
+          <button class="btn btn-primary" type="submit" id="detailsNext">Continue →</button>
         </div>
       </form>
     </section>
@@ -298,7 +327,6 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
         <div class="stepper" data-key="infants"><button type="button" data-d="-1" aria-label="Fewer kids under 3">−</button><output aria-live="polite">0</output><button type="button" data-d="1" aria-label="More kids under 3">+</button></div>
       </div>
       <div class="total" id="totalBox"></div>
-      <p class="small" id="limitNote" style="margin-top:12px"></p>
       <div class="actions">
         <button class="btn btn-ghost" type="button" data-back>← Back</button>
         <button class="btn btn-primary" type="button" id="guestsNext">Continue →</button>
@@ -440,7 +468,7 @@ const DEMO = !CONFIG.SCRIPT_URL;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const STORE_KEY = 'sorento_diwali_2026_rsvps';
 
-const state = { name:'', phone:'', email:'', address:'', adults:1, kids:0, infants:0, paid:null, payer:'', perform:false };
+const state = { name:'', phone:'', email:'', address:'', adults:1, kids:0, infants:0, paid:null, payer:'', perform:false, returning:false, saved:null };
 let step = 0;
 let server = { mode: 'loading' };
 
@@ -515,14 +543,11 @@ function renderStatus(){
     $('#startBtn').textContent = 'Join the waitlist →';
     return;
   }
-  if (typeof server.spotsLeft === 'number') {
-    txt.textContent = `${server.spotsLeft} spot${server.spotsLeft === 1 ? '' : 's'} left`;
-    if (server.spotsLeft <= 25) pill.classList.add('warn');
-  } else txt.textContent = 'RSVP open';
+  txt.textContent = 'RSVP open';
 }
 async function loadStatus(){
   try {
-    if (DEMO) { await sleep(400); server = { ok:true, mode:'open', spotsLeft:118, deadline:CONFIG.RSVP_DEADLINE }; }
+    if (DEMO) { await sleep(400); server = { ok:true, mode:'open', deadline:CONFIG.RSVP_DEADLINE }; }
     else {
       const r = await fetch(CONFIG.SCRIPT_URL + '?action=status', { cache:'no-store' });
       server = await r.json();
@@ -576,7 +601,79 @@ function fmtPhone(v){
   if (d.length > 3) return `(${d.slice(0,3)}) ${d.slice(3)}`;
   return d;
 }
-$('#phone').addEventListener('input', e => { e.target.value = fmtPhone(e.target.value); });
+/* returning-family lookup */
+let lastLooked = '', lookupSeq = 0;
+async function apiLookup(digits){
+  if (DEMO) {
+    await sleep(600);
+    if (digits === '5125550123') return { ok:true, found:true, name:'Priya Sharma', email:'pr•••@gmail.com', address:'1•• Sorento Ln', adults:2, kids:1, infants:0, year:2025 };
+    return { ok:true, found:false };
+  }
+  const r = await fetch(CONFIG.SCRIPT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ action:'lookup', phone: digits }) });
+  return r.json();
+}
+function setReturning(p){
+  state.returning = !!p;
+  state.saved = p || null;
+  $('#welcomeCard').hidden = !p;
+  $('#newFields').hidden = !!p;
+  $('#detailsNext').textContent = p ? 'Yes, that\'s me →' : 'Continue →';
+  if (p) {
+    $('#wbName').textContent = p.name.split(' ')[0];
+    $('#wbFull').textContent = p.name;
+    $('#wbEmail').textContent = p.email || '—';
+    $('#wbAddr').textContent = p.address || '—';
+    const parts = [plural(p.adults, 'adult', 'adults')];
+    if (p.kids) parts.push(plural(p.kids, 'kid (3+)', 'kids (3+)'));
+    if (p.infants) parts.push(plural(p.infants, 'kid under 3', 'kids under 3'));
+    $('#wbLast').textContent = parts.join(' · ') + (p.year ? ` (${p.year})` : '');
+    // start this year's guest counts from last time
+    ['adults','kids','infants'].forEach(k => {
+      const [min, max] = CONFIG.LIMITS[k];
+      state[k] = Math.min(max, Math.max(min, Number(p[k]) || min));
+    });
+    renderGuests();
+  }
+}
+async function runLookup(digits){
+  const seq = ++lookupSeq, st = $('#lookupStatus');
+  st.className = 'lookup'; st.textContent = 'Looking you up…';
+  try {
+    const res = await apiLookup(digits);
+    if (seq !== lookupSeq) return;
+    if (res.already) {
+      st.textContent = `This number already has an RSVP for this year (ref ${res.ref}). To change it, please contact the organizers.`;
+      setReturning(null);
+    } else if (res.found) {
+      st.textContent = '';
+      setReturning(res);
+    } else {
+      st.className = 'lookup ok'; st.textContent = 'New this year? Welcome! 🎉 Just a few more details.';
+      setReturning(null);
+      $('#name').focus();
+    }
+  } catch {
+    if (seq !== lookupSeq) return;
+    st.textContent = '';
+    setReturning(null);
+  }
+}
+$('#phone').addEventListener('input', e => {
+  e.target.value = fmtPhone(e.target.value);
+  const digits = e.target.value.replace(/\D/g, '');
+  if (digits.length === 10 && digits !== lastLooked) { lastLooked = digits; runLookup(digits); }
+  else if (digits.length < 10 && lastLooked) {
+    lastLooked = ''; lookupSeq++; $('#lookupStatus').textContent = ''; setReturning(null);
+  }
+});
+$('#wbEdit').addEventListener('click', () => {
+  const p = state.saved;
+  setReturning(null);
+  $('#name').value = p ? p.name : '';
+  $('#lookupStatus').className = 'lookup';
+  $('#lookupStatus').textContent = 'Please re-enter your email and address so we have them right.';
+  $('#email').focus();
+});
 Object.keys(rules).forEach(k => {
   const el = $('#' + k);
   el.addEventListener('blur', () => { if (el.value) checkField(k); });
@@ -584,6 +681,14 @@ Object.keys(rules).forEach(k => {
 });
 $('#detailsForm').addEventListener('submit', e => {
   e.preventDefault();
+  if (state.returning) {
+    if (!checkField('phone')) return;
+    state.name = state.saved.name;
+    state.phone = fmtPhone($('#phone').value);
+    state.email = ''; state.address = '';
+    go(2);
+    return;
+  }
   const results = Object.keys(rules).map(checkField);
   if (results.every(Boolean)) {
     state.name = $('#name').value.trim().replace(/\s+/g, ' ');
@@ -621,7 +726,6 @@ function renderGuests(){
      ${state.kids ? `<div class="line"><span>${plural(state.kids,'kid','kids')} (3+) × $${CONFIG.PRICE_KID}</span><span>$${state.kids * CONFIG.PRICE_KID}</span></div>` : ''}
      ${state.infants ? `<div class="line"><span>${plural(state.infants,'kid','kids')} under 3</span><span>Free</span></div>` : ''}
      <div class="sum"><span>${plural(t.people,'person','people')} · your share</span><b>$${t.amount}</b></div>`;
-  $('#limitNote').textContent = '';
 }
 $$('.stepper').forEach(st => st.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled) return;
@@ -629,12 +733,7 @@ $$('.stepper').forEach(st => st.addEventListener('click', e => {
   state[k] = Math.min(max, Math.max(min, state[k] + +b.dataset.d));
   renderGuests();
 }));
-$('#guestsNext').addEventListener('click', () => {
-  if (server.mode === 'open' && typeof server.spotsLeft === 'number' && totals().people > server.spotsLeft) {
-    $('#limitNote').textContent = `Heads up: only ${server.spotsLeft} spots are left, so your RSVP may go on the waitlist.`;
-  }
-  go(3);
-});
+$('#guestsNext').addEventListener('click', () => go(3));
 
 /* ---------- step 3: payment ---------- */
 function isWaitlist(){ return server.mode === 'waitlist'; }
@@ -685,7 +784,9 @@ function renderReview(){
     : t.amount === 0 ? 'Nothing to pay'
     : state.paid ? `Sent via Zelle${state.payer ? ` (by ${state.payer})` : ''}` : 'Not yet sent';
   const rows = [
-    ['Name', state.name], ['Phone', state.phone], ['Email', state.email], ['Address', state.address],
+    ['Name', state.name], ['Phone', state.phone],
+    ['Email', state.returning ? state.saved.email + ' (saved)' : state.email],
+    ['Address', state.returning ? state.saved.address + ' (saved)' : state.address],
     ['Guests', guestsSummary()], ['Your share', '$' + t.amount], ['Payment', payText],
     ['Performing', state.perform ? 'Yes, interested' : 'No'],
   ];
@@ -701,7 +802,8 @@ $('#submitBtn').addEventListener('click', async () => {
   const btn = $('#submitBtn'), err = $('#submitErr');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Submitting…';
   err.classList.remove('show');
-  const payload = { ...state, amount: totals().amount, website: $('#website').value };
+  const { saved, ...rest } = state;
+  const payload = { ...rest, amount: totals().amount, website: $('#website').value };
   try {
     const res = await postRSVP(payload);
     if (res.ok) { showDone(res); }
@@ -774,6 +876,7 @@ $('#icsBtn').addEventListener('click', () => {
 });
 $('#againBtn').addEventListener('click', () => {
   Object.assign(state, { name:'', phone:'', email:'', address:'', adults:1, kids:0, infants:0, paid:null, payer:'', perform:false });
+  setReturning(null); lastLooked = ''; lookupSeq++; $('#lookupStatus').textContent = '';
   ['name','phone','email','address','payer'].forEach(id => $('#' + id).value = '');
   $('#perform').checked = false;
   $$('.field').forEach(f => f.classList.remove('invalid'));
