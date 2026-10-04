@@ -313,7 +313,7 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
     <!-- 2 · Guests -->
     <section class="step" data-step="2" aria-labelledby="h2s">
       <h2 id="h2s" tabindex="-1">Who's coming?</h2>
-      <p class="lede">Include yourself in the adult count.</p>
+      <p class="lede" id="guestsLede">Include yourself in the adult count.</p>
       <div class="guest">
         <div class="who"><b>Adults</b><small id="pAdult"></small></div>
         <div class="stepper" data-key="adults"><button type="button" data-d="-1" aria-label="Fewer adults">−</button><output aria-live="polite">1</output><button type="button" data-d="1" aria-label="More adults">+</button></div>
@@ -422,7 +422,7 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
 const CONFIG = {
   // Paste your Apps Script web app URL here (see SETUP.md).
   // Leave empty to run in demo mode (nothing is saved).
-  SCRIPT_URL: '',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbww4uXSdycvnBYlrBpk4n8JIF3WTvFZmtO9J3CJw_oAG8pRl8oyY1grTTtyyn8O5g1m/exec',
 
   EVENT_NAME: 'Sorento Diwali 2026',
   EVENT_DATE: '2026-10-30',                 // YYYY-MM-DD
@@ -438,17 +438,17 @@ const CONFIG = {
   PRICE_KID: 10,
   LIMITS: { adults: [1, 6], kids: [0, 4], infants: [0, 3] },
 
-  // TODO: replace with the 2026 organizers
   ZELLE: [
-    { name: 'Organizer 1', phone: '000-000-0000' },
-    { name: 'Organizer 2', phone: '000-000-0000' },
-    { name: 'Organizer 3', phone: '000-000-0000' },
+    { name: 'Narendra Patel', phone: '502-572-5440' },
+    { name: 'Piyush', phone: '704-208-0786' },
   ],
   QUESTIONS: [
-    { name: 'Organizer 1', phone: '000-000-0000' },
-    { name: 'Organizer 2', phone: '000-000-0000' },
+    { name: 'Neha', phone: '309-857-2047' },
   ],
-  PERFORMANCE_CONTACT: { name: 'Coordinator', phone: '000-000-0000' },
+  PERFORMANCE_CONTACTS: [
+    { name: 'Neha', phone: '309-857-2047' },
+    { name: 'Sonal', phone: '737-386-1608' },
+  ],
 
   // Put these image files in a "photos" folder next to this page.
   PHOTOS: [
@@ -505,7 +505,7 @@ function renderStatic(){
      <div class="price"><b>Free</b><small>under 3</small></div>`;
   $('#pAdult').textContent = `$${CONFIG.PRICE_ADULT} each`;
   $('#pKid').textContent = `$${CONFIG.PRICE_KID} each`;
-  $('#performNote').textContent = `Dance or music. ${CONFIG.PERFORMANCE_CONTACT.name} will reach out to coordinate.`;
+  $('#performNote').textContent = `Dance or music. ${CONFIG.PERFORMANCE_CONTACTS.map(p => p.name).join(' or ')} will reach out to coordinate.`;
 
   const photos = $('#photos');
   photos.innerHTML = CONFIG.PHOTOS.map(p =>
@@ -519,7 +519,7 @@ function renderStatic(){
 
   $('#footer').innerHTML =
     `Questions? Call or text ${CONFIG.QUESTIONS.map(telLink).join(' · ')}<br>
-     Want to perform? ${telLink(CONFIG.PERFORMANCE_CONTACT)}<br>
+     Want to perform? ${CONFIG.PERFORMANCE_CONTACTS.map(telLink).join(' · ')}<br>
      <span style="opacity:.75">Not sponsored by the HOA · Costs shared at actual</span>` +
     (DEMO ? `<div class="demo">Demo mode: submissions aren't saved until SCRIPT_URL is set.</div>` : '');
 }
@@ -606,7 +606,6 @@ let lastLooked = '', lookupSeq = 0;
 async function apiLookup(digits){
   if (DEMO) {
     await sleep(600);
-    if (digits === '5125550123') return { ok:true, found:true, name:'Priya Sharma', email:'pr•••@gmail.com', address:'1•• Sorento Ln', adults:2, kids:1, infants:0, year:2025 };
     return { ok:true, found:false };
   }
   const r = await fetch(CONFIG.SCRIPT_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ action:'lookup', phone: digits }) });
@@ -618,6 +617,9 @@ function setReturning(p){
   $('#welcomeCard').hidden = !p;
   $('#newFields').hidden = !!p;
   $('#detailsNext').textContent = p ? 'Yes, that\'s me →' : 'Continue →';
+  $('#guestsLede').textContent = p
+    ? 'We started with last time\'s numbers. Update anything that changed; kids who have turned 3 now count as 3+.'
+    : 'Include yourself in the adult count.';
   if (p) {
     $('#wbName').textContent = p.name.split(' ')[0];
     $('#wbFull').textContent = p.name;
@@ -644,6 +646,12 @@ async function runLookup(digits){
     if (res.already) {
       st.textContent = `This number already has an RSVP for this year (ref ${res.ref}). To change it, please contact the organizers.`;
       setReturning(null);
+    } else if (res.found && res.incomplete) {
+      setReturning(null);
+      $('#name').value = res.name;
+      st.className = 'lookup ok';
+      st.textContent = `Welcome back, ${res.name.split(' ')[0]}! 👋 Please confirm your email and address for this year.`;
+      $('#email').focus();
     } else if (res.found) {
       st.textContent = '';
       setReturning(res);
