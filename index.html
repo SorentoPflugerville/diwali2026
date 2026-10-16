@@ -62,6 +62,10 @@ h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,9vw,50px);lin
 .card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:22px 18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 24px 70px rgba(0,0,0,.38)}
 @media (min-width:480px){.card{padding:26px 26px}}
 
+.venue-chip{max-width:100%;white-space:normal;text-align:center}
+.venue-details{margin:10px auto 0;max-width:100%;font-size:14px;line-height:1.5;color:var(--muted)}
+.venue-details a{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px;color:var(--gold);text-underline-offset:3px}
+
 /* ---------- progress ---------- */
 .progress{display:none;margin-bottom:20px}
 .progress.show{display:block}
@@ -242,8 +246,9 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
     <h1 id="eventName">Sorento Diwali 2026</h1>
     <div class="meta">
       <span class="chip">🗓️ <span id="eventDate"></span></span>
-      <span class="chip">📍 <span id="eventVenue"></span></span>
+      <span class="chip venue-chip">📍 <span id="eventVenue"></span></span>
     </div>
+    <div class="venue-details"><div id="venueLandmark"></div><div id="venueAddress"></div><a id="venueDirections" target="_blank" rel="noopener noreferrer">Get directions</a></div>
   </header>
 
   <div class="card">
@@ -450,7 +455,10 @@ const CONFIG = {
   EVENT_DATE_LABEL: 'Friday, October 30',
   EVENT_START: '',                          // optional, e.g. '2026-10-30T18:00:00-05:00' (leave '' for all-day)
   EVENT_END: '',                            // optional, e.g. '2026-10-30T22:00:00-05:00'
-  VENUE: 'Venue to be announced',
+  VENUE: 'Greater Austin Nepali Community Center',
+  VENUE_LANDMARK: 'Next to Pashupatinath Temple',
+  VENUE_ADDRESS: '1251 Co Rd 138, Hutto, TX 78634',
+  VENUE_MAP_URL: 'https://www.google.com/maps/dir/?api=1&destination=1251%20Co%20Rd%20138%2C%20Hutto%2C%20TX%2078634',
 
   // Shown before the backend responds; the backend's deadline wins once loaded.
   RSVP_DEADLINE: '2026-10-18T23:59:00-05:00',
@@ -520,6 +528,9 @@ function renderStatic(){
   $('#eventName').textContent = CONFIG.EVENT_NAME;
   $('#eventDate').textContent = CONFIG.EVENT_DATE_LABEL;
   $('#eventVenue').textContent = CONFIG.VENUE;
+  $('#venueLandmark').textContent = CONFIG.VENUE_LANDMARK;
+  $('#venueAddress').textContent = CONFIG.VENUE_ADDRESS;
+  $('#venueDirections').href = CONFIG.VENUE_MAP_URL;
   $('#prices').innerHTML =
     `<div class="price"><b>$${CONFIG.PRICE_ADULT}</b><small>per adult</small></div>
      <div class="price"><b>$${CONFIG.PRICE_KID}</b><small>kids 3+</small></div>
@@ -930,7 +941,7 @@ function setupLinks(){
     + '&text=' + encodeURIComponent(CONFIG.EVENT_NAME)
     + '&dates=' + s + '/' + e
     + '&details=' + encodeURIComponent(details)
-    + '&location=' + encodeURIComponent(CONFIG.VENUE);
+    + '&location=' + encodeURIComponent(CONFIG.VENUE + ', ' + CONFIG.VENUE_ADDRESS);
   $('#waShare').href = 'https://wa.me/?text=' + encodeURIComponent(
     `🪔 ${CONFIG.EVENT_NAME} is on ${CONFIG.EVENT_DATE_LABEL}! RSVP here: ${pageUrl()}`);
 }
@@ -939,7 +950,7 @@ $('#icsBtn').addEventListener('click', () => {
   const dt = allDay ? [`DTSTART;VALUE=DATE:${s}`, `DTEND;VALUE=DATE:${e}`] : [`DTSTART:${s}`, `DTEND:${e}`];
   const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Sorento Diwali//RSVP//EN','BEGIN:VEVENT',
     'UID:' + Date.now() + '@sorento-diwali', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''),
-    ...dt, 'SUMMARY:' + CONFIG.EVENT_NAME, 'LOCATION:' + CONFIG.VENUE, 'DESCRIPTION:RSVP ' + pageUrl(),
+    ...dt, 'SUMMARY:' + CONFIG.EVENT_NAME, 'LOCATION:' + (CONFIG.VENUE + ', ' + CONFIG.VENUE_ADDRESS).replace(/,/g, '\\,'), 'DESCRIPTION:RSVP ' + pageUrl(),
     'END:VEVENT','END:VCALENDAR'].join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([ics], { type:'text/calendar' }));
