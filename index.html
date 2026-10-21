@@ -261,6 +261,7 @@ footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--
     <section class="step active" data-step="0" aria-labelledby="h0">
       <div class="status-row"><span class="pill neutral" id="statusPill"><span class="dot"></span><span id="statusText">Checking availability…</span></span></div>
       <h2 id="h0" tabindex="-1">You're invited ✨</h2>
+      <p id="extensionNotice" class="pill warn" hidden style="border-radius:12px;display:block;margin-bottom:16px">By popular demand, RSVPs are open for a few extra days! Register by Sunday, October 25 at 11:59 PM CT.</p>
       <p class="lede">A joyful Diwali evening for <b>Sorento community residents and their family</b>. <span id="deadlineText"></span></p>
       <div id="mine"></div>
 
@@ -461,7 +462,7 @@ const CONFIG = {
   VENUE_MAP_URL: 'https://www.google.com/maps/dir/?api=1&destination=1251%20Co%20Rd%20138%2C%20Hutto%2C%20TX%2078634',
 
   // Shown before the backend responds; the backend's deadline wins once loaded.
-  RSVP_DEADLINE: '2026-10-18T23:59:00-05:00',
+  RSVP_DEADLINE: '2026-10-25T23:59:00-05:00',
 
   PRICE_ADULT: 20,
   PRICE_KID: 10,
@@ -570,6 +571,16 @@ function renderStatus(){
   const pill = $('#statusPill'), txt = $('#statusText');
   const deadline = server.deadline || CONFIG.RSVP_DEADLINE;
   const daysLeft = Math.ceil((new Date(deadline) - Date.now()) / 86400000);
+  // Announce the extension only after the backend actually enables it.
+  const extensionActive = ['open', 'waitlist'].includes(server.mode)
+    && new Date(deadline).getTime() >= new Date(CONFIG.RSVP_DEADLINE).getTime()
+    && Date.now() <= new Date(deadline).getTime();
+  const extensionNotice = $('#extensionNotice');
+  extensionNotice.hidden = !extensionActive;
+  extensionNotice.style.display = extensionActive ? 'block' : 'none';
+  extensionNotice.textContent = server.mode === 'waitlist'
+    ? 'By popular demand, the RSVP window has been extended through Sunday, October 25 at 11:59 PM CT. The venue is full; you can join the waitlist.'
+    : 'By popular demand, RSVPs are open for a few extra days! Register by Sunday, October 25 at 11:59 PM CT.';
   $('#deadlineText').innerHTML = `RSVP closes <b>${esc(fmtDeadline(deadline))}</b>` +
     (daysLeft > 0 ? ` · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left.` : '.');
   pill.className = 'pill';
